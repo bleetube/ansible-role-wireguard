@@ -1,0 +1,22 @@
+#!/bin/bash
+set -x
+
+
+if [[ "add" == ${1} ]]
+then
+{% for forward_target in wireguard_forward_targets %}
+    iptables -A FORWARD -i {{ wireguard_if }} -d {{ forward_target }} -j ACCEPT
+{% endfor %}
+    iptables -A FORWARD -o {{ wireguard_if }} -j ACCEPT
+    iptables -t nat -A POSTROUTING -s {{ wireguard_subnet }} -o {{ wireguard_inet_if }} -j SNAT --to-source {{ wireguard_snat_address }}
+    iptables -P FORWARD DROP
+fi
+
+if [[ "del" == ${1} ]]
+then
+{% for forward_target in wireguard_forward_targets %}
+    iptables -D FORWARD -i {{ wireguard_if }} -d {{ forward_target }} -j ACCEPT
+{% endfor %}
+    iptables -D FORWARD -o {{ wireguard_if }} -j ACCEPT
+    iptables -t nat -D POSTROUTING -s {{ wireguard_subnet }} -o {{ wireguard_inet_if }} -j SNAT --to-source {{ wireguard_snat_address }}
+fi

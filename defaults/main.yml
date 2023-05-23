@@ -1,0 +1,11 @@
+---
+wireguard_snat_address: "{{ ansible_default_ipv4.address|default(ansible_all_ipv4_addresses[0]) }}"
+wireguard_inet_if: "{{ ansible_default_ipv4.interface }}"
+wireguard_if: wg0
+wireguard_forward_targets:
+  - 0.0.0.0/0
+wireguard_packages:
+  - iptables        # missing in some Debian 11 cloudimages
+  - tcpdump
+  - wireguard
+  - wireguard-tools

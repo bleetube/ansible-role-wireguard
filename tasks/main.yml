@@ -1,0 +1,47 @@
+---
+#- name: Load target host configuration if it is defined.
+#  ansible.builtin.include_vars:
+#    file: "{{ item }}"
+#  with_first_found:
+#    - files:
+#        - "vars/targets/{{ inventory_hostname_short }}.yml"
+#        - "../../host_vars/wireguard/{{ inventory_hostname_short }}.yml"
+#      skip: true
+#  tags: test
+
+- name: Assert the private key has been configured.
+  ansible.builtin.assert:
+    that:
+      - wireguard_private_key != ''
+    fail_msg: "FAILED: Wireguard private key is not set."
+  no_log: true
+
+- name: Install and update Wireguard related packages
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: latest
+  loop: "{{ wireguard_packages }}"
+
+# https://docs.ansible.com/ansible/latest/collections/ansible/posix/sysctl_module.html
+- ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: 1
+    sysctl_set: yes
+  loop:
+    - net.ipv4.ip_forward
+    - net.ipv6.conf.all.forwarding
+
+# TODO: come up with a way to have different routing policy templates for different hosts
+- name: Configure Wireguard forwarding
+  ansible.builtin.template:
+    src: routes.sh.j2
+    dest: /etc/wireguard/routes.sh
+    mode: '0755'
+
+- name: Configure Wireguard tunnel
+  ansible.builtin.template:
+    src: interface.conf.j2
+    dest: "/etc/wireguard/{{ wireguard_if }}.conf"
+    mode: '0600'
+  notify: "restart {{ wireguard_if }}"
+  tags: interface

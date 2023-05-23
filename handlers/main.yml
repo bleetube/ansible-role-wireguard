@@ -1,0 +1,5 @@
+---
+- name: restart {{ wireguard_if }}
+  ansible.builtin.service:
+    name: wg-quick@{{ wireguard_if }}
+    state: restarted
