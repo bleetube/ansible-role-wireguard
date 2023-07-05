@@ -1,2 +1,0 @@
-vars/targets/*.yml
-!vars/targets/example.yml
